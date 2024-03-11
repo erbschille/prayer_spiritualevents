@@ -1,0 +1,59 @@
+question,question_text,scale,question_type,reverse,question_lab,category
+spiritualevents_01,"Have you
+ever heard God or a spirit speak to you in a voice you felt you heard outside
+your head?",spiritualevents,primary question,straight,voice_ears,outer_sensory
+spiritualevents_02,"Have you
+heard God or a spirit speak to you in a voice that you felt you experienced
+inside your head?",spiritualevents,primary question,straight,voice_mind,relabeled
+spiritualevents_03,"Have you
+felt that God or a spirit placed thoughts inside your head?",spiritualevents,primary question,straight,thoughts_mind,relabeled
+spiritualevents_04,"Have you
+ever had a vision, that is, seen something not quite in your mind, that you
+felt was given to you by God or a spirit?",spiritualevents,primary question,straight,vision_eyes,outer_sensory
+spiritualevents_05,"Have you
+ever felt that God or a spirit placed an image inside your head?",spiritualevents,primary question,straight,vision_mind,relabeled
+spiritualevents_06,"Have you
+ever felt that God or a spirit touch you, maybe on the shoulder or the hand, in
+a way you felt on your body?",spiritualevents,primary question,straight,touch,outer_sensory
+spiritualevents_07,"Have you
+ever felt that you smelled God or a spirit? That is, have you ever smelled
+something that is not of this material world?",spiritualevents,primary question,straight,smell,outer_sensory
+spiritualevents_08,"Have you
+ever felt that you tasted God or a spirit?",spiritualevents,primary question,straight,taste,outer_sensory
+spiritualevents_09,"Have you
+ever had a dream you felt was sent by God or a spirit?",spiritualevents,primary question,straight,dream,relabeled
+spiritualevents_10,"Have you
+ever felt God or a spirit near-tangibly present, as if standing there by your
+side?",spiritualevents,primary question,straight,presence_god,presence
+spiritualevents_11,"Have you
+ever felt a demonic presence as if it was there in the room with you?",spiritualevents,primary question,straight,presence_demon,presence
+spiritualevents_12,"Have you
+ever experienced a supernatural presence that was not God, a spirit, or a
+demon?",spiritualevents,primary question,straight,presence_other,presence
+spiritualevents_13,"Have you
+ever had an experience of uncontrollable shaking or trembling during prayer, or
+been slain in the spirit?",spiritualevents,primary question,straight,slain_in_spirit,NA
+spiritualevents_14,"Have you ever had a feeling of overwhelming
+emotion during prayer?",spiritualevents,primary question,straight,overwhelm_emotion,relabeled
+spiritualevents_15,"Have you
+ever had a sense of intense power shoot through you during prayer?",spiritualevents,primary question,straight,power,NA
+spiritualevents_16,"Have you
+ever had an out-of-body experience, in which you were separated from your body
+and you could see your body from the outside?",spiritualevents,primary question,straight,out_of_body,weird
+spiritualevents_17,"Have you
+ever felt that a supernatural force, like the Holy Spirit or a demon, took
+control of your body, so that you were not making the choice of whether to move
+but still you moved?",spiritualevents,primary question,straight,possession,weird
+spiritualevents_18,"Have you ever had the experience of being awake
+but unable to move?",spiritualevents,primary question,straight,sleep_paralysis,weird
+spiritualevents_19,"Have you
+ever experienced the presence of God through pain (such as headaches, bodily
+aches and pains, stomachaches)?",spiritualevents,primary question,straight,pain,relabeled
+spiritualevents_20,"Have you
+ever experienced the presence of God through illness (including as warning or
+punishment)?",spiritualevents,primary question,straight,illness,relabeled
+spiritualevents_21,"Have you
+ever experienced the presence of God in a miraculous healing (that you saw in
+person, not on television)?",spiritualevents,primary question,straight,healing_other,NA
+spiritualevents_22,"Have you
+ever experienced the presence of God through your own miraculous healing?",spiritualevents,primary question,straight,healing_self,NA
