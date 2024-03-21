@@ -236,6 +236,57 @@ m.int.a.2.1 <- lmer(
 parameters(m.int.a.2.1)
 ```
 
+### Local & charismatic participants, grouped by country
+
+```{r}
+d_i_m_sum_all %>%
+  filter(!is.na(prayfreqmin)) %>%
+ggplot(aes(x = prayfreqmin, y = spev_score)) +
+  geom_jitter(aes(color = religion), 
+              height = 0, width = 0.2, alpha = 0.8, size = 1) +
+  geom_smooth(aes(group = religion, color = religion), 
+              method = "lm", se = TRUE, alpha = 0.1) +
+  facet_wrap(~ country, ncol = 5) +  
+  scale_x_continuous(breaks = 1:4, labels = levels(d_i_m_sum_all$prayfreqmin_cat)) +
+  scale_color_brewer(palette = "Set2") +
+  labs(title = "Study 1, by religion and country",
+       x = "'How many minutes each day do you [pray] on average throughout the week?'",
+       y = "Spiritual Events Score",
+       color = "Group") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position = "top", 
+        axis.title.x = element_text(size = 13), 
+        axis.title.y = element_text(size = 18), 
+        title = element_text(size = 15))
+```
+
+### Non-Christian participants, grouped by country 
+
+```{r}
+d_i_m_sum_all %>%
+  filter(religion == "local") %>%
+  filter(country != "US") %>%
+  filter(!(country == "Vanuatu" & site != "rural")) %>%
+  filter(!is.na(prayfreqmin)) %>%
+ggplot(aes(x = prayfreqmin, y = spev_score)) +
+  geom_jitter(aes(color = country), 
+              height = 0, width = 0.2, alpha = 0.8, size = 1) +
+  geom_smooth(aes(group = country, color = country), 
+              method = "lm", se = TRUE, alpha = 0.1) +
+  facet_wrap(~ country, ncol = 5) +  
+  scale_x_continuous(breaks = 1:4, labels = levels(d_i_m_sum_all$prayfreqmin_cat)) +
+  scale_color_brewer(palette = "Set2") +
+  labs(title = "Study 1, NON Christians",
+       x = "'How many minutes each day do you [pray] on average throughout the week?'",
+       y = "Spiritual Events Score",
+       color = "Country") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position = "top", 
+        axis.title.x = element_text(size = 13), 
+        axis.title.y = element_text(size = 18), 
+        title = element_text(size = 15))
+```
+
 ## Study 2
 
 **An informal summary (KW)**: above and beyond differences across countries and samples (charismatic vs. general population), the more frequently a person reported praying, the more spiritual events they reported having experienced. This is robust to many analytic decisions, including modeling responses at the item level vs. modeling average scores on the Spiritual Events scale and considering sample characteristics as fixed or random effects. 
@@ -321,6 +372,55 @@ m.epi.b.2p <- lmer(
 parameters(m.epi.b.2p)
 ```
 
+### General population & charismatic participants, grouped by country
+
+```{r}
+d_e_m_sum_all %>%
+  filter(!is.na(prayminday_imp0)) %>%
+ggplot(aes(x = prayminday_imp0, y = spev_score)) +
+  geom_jitter(aes(color = population), 
+              height = 0, width = 0.2, alpha = 0.8, size = 1) +
+  geom_smooth(aes(group = population, color = population), 
+              method = "lm", se = TRUE, alpha = 0.1) +
+  facet_wrap(~ country, ncol = 5) +  
+  scale_x_continuous(breaks = 0:4, labels = levels(d_e_m_sum_all$prayminday_imp0_cat)) +
+  scale_color_brewer(palette = "Set2") +
+  labs(title = "Study 2, by population and country",
+       x = "'Do you [pray] regularly? On an average day, how many minutes do you [pray]?'\nNOTE: Participants who explicitly reported never praying were assigned 'not at all' (0)",
+       y = "Spiritual Events Score",
+       color = "Group") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position = "top", 
+        axis.title.x = element_text(size = 13), 
+        axis.title.y = element_text(size = 18), 
+        title = element_text(size = 15))
+```
+
+### General population participants, grouped by country 
+
+```{r}
+d_e_m_sum_all %>%
+  filter(!is.na(prayminday_imp0)) %>%
+  filter(population == "general population") %>%
+ggplot(aes(x = prayminday_imp0, y = spev_score)) +
+  geom_jitter(aes(color = country), 
+              height = 0, width = 0.2, alpha = 0.8, size = 1) +
+  geom_smooth(aes(group = country, color = country), 
+              method = "lm", se = TRUE, alpha = 0.1) +
+  facet_wrap(~ country, ncol = 5) +  
+  scale_x_continuous(breaks = 0:4, labels = levels(d_e_m_sum_all$prayminday_imp0_cat)) +
+  scale_color_brewer(palette = "Set2") +
+  labs(title = "Study 2, General Population only",
+       x = "'Do you [pray] regularly? On an average day, how many minutes do you [pray]?'\nNOTE: Participants who explicitly reported never praying were assigned 'not at all' (0)",
+       y = "Spiritual Events Score",
+       color = "Country") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position = "top", 
+        axis.title.x = element_text(size = 13), 
+        axis.title.y = element_text(size = 18), 
+        title = element_text(size = 15))
+```
+
 ## Study 3
 
 **An informal summary (KW)**: above and beyond differences across denominations, the more frequently a person reported praying, the more spiritual events they reported having experienced. This is robust to many analytic decisions, including [NOT YET CONFIRMED: modeling responses at the item level vs. modeling average scores on the Spiritual Events scale and] considering sample characteristics as fixed vs. random effects. 
@@ -397,6 +497,33 @@ m.pro.a.3 <- lm(
 
 ```{r}
 parameters(m.pro.a.3)
+```
+
+### Non-religious participants only 
+
+```{r, fig.width = 15}
+d_p_m_sum %>%
+  filter(religion_denom == "Non-religious") %>%
+  #filter(religion_denom != "Christian") %>%
+  #filter(religion_denom == "New Age / Spiritual") %>% 
+  filter(religion_cat != "NA") %>% 
+ggplot(aes(x = pray_freq_PEW_num, y = spev_score)) +
+   geom_jitter(aes(color = religion_cat), height = 0, width = 0.2, alpha = 0.7, size = 0.1) +
+  geom_smooth(aes(group = religion_cat, color = religion_cat), 
+              method = "lm", se = TRUE, alpha = 0.1) +
+  facet_wrap(~ religion_cat, ncol = 7) +  
+  scale_x_continuous(breaks = 1:7, labels = levels(d_p_m_sum$pray_freq_PEW)) +
+  scale_y_continuous(breaks = 0:4, limits = c(0, 4)) +
+  scale_color_brewer(palette = "Set2") +
+  labs(title = "Study 3, Non-Religious participants only",
+       x = "'Outside of attending religious services, how often do you pray?'",
+       y = "Spiritual Events score (mean response)",
+       color = "Group") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        #legend.position = "top", 
+        axis.title.x = element_text(size = 13), 
+        axis.title.y = element_text(size = 18), 
+        title = element_text(size = 15))
 ```
 
 # Analysis 2: Prayer Affects Some Spiritual Presence Events More Than Others 
