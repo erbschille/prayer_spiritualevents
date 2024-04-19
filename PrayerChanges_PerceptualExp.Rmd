@@ -1,5 +1,5 @@
 ---
-title: "The Effects of Prayer on Spiritual Presence Events"
+title: "Prayer Changes Perceptual and Other Experiences--y/n"
 author: "Eleanor Schille-Hudson & Kara Weisman"
 date: "2024-03-05"
 output: html_document
@@ -22,6 +22,8 @@ select <- dplyr::select
 ```
 
 ## Study 1
+
+Worth noting that all responses for study 1 are yes/no. No frequency
 
 ```{r}
 # loading study 1 data set
@@ -119,7 +121,57 @@ contrasts(d_e_m_sum$population) <- contrasts_religion
 contrasts(d_e_m_sum_all$country) <- contrasts_country
 contrasts(d_e_m_sum_all$population) <- contrasts_religion
 ```
+```{r}
+# loading study 2 data set -- FREQUENCY data
+d_e_m_f <- read_csv("./data/d_e_m_f.csv") %>% 
+  mutate(
+    question = factor(question), 
+    category = factor(category, levels = c("relabeled", "outer_sensory", "presence", "weird")),
+    country = factor(country, levels = levels_country),
+    population = factor(population),
+    population = droplevels(population),
+    prayminday_imp0_cat = recode_factor(
+      prayminday_imp0,
+      `0` = "not at all",
+      `1` = "0-15 minutes",
+      `2` = "15-30 minutes",
+      `3` = "30-60 minutes",
+      `4` = ">60 minutes"),
+    howr_num = ifelse(epi_demo_howr == "Missing Data", NA,
+                      as.numeric(factor(epi_demo_howr, 
+                                        levels = c("Strongly disagree", "Disagree", "Neither agree nor disagree", "Agree", "Strongly agree"))))
+  )
 
+# creating useful data frames for later analyses
+d_e_m_f_sum <- d_e_m_f %>%
+  group_by(
+    subject_id, country, population, 
+    prayminday_imp0, prayminday_imp0_cat, category, howr_num) %>%
+  summarise(spev_score_f = mean(response, na.rm = T)) %>%
+  mutate(spev_score_f_scaled = spev_score_f/5) %>%
+  ungroup()
+
+d_e_m_f_sum_all <- d_e_m_f %>%
+  group_by(
+    subject_id, country, population, 
+    prayminday_imp0, prayminday_imp0_cat, howr_num) %>%
+  summarise(spev_score_f = mean(response, na.rm = T)) %>%
+  mutate(spev_score_f_scaled = spev_score_f/5) %>%
+  ungroup()
+
+# setting contrasts (effect-coding)
+contrasts(d_e_m_f$question) <- contr_effect_fun(d_e_m_f, "question", "spiritual_healing") # drop spiritual healing
+contrasts(d_e_m_f$country) <- contrasts_country # drop US
+contrasts(d_e_m_f$population) <- cbind("_char" = c(1, -1)) # drop gen pop
+contrasts(d_e_m_f$category) <- contr_effect_fun(d_e_m_f, "category", "weird") # drop weird
+
+contrasts(d_e_m_f_sum$country) <- contrasts_country
+contrasts(d_e_m_f_sum$population) <- contrasts_religion
+
+# setting contrasts (effect-coding)
+contrasts(d_e_m_f_sum_all$country) <- contrasts_country
+contrasts(d_e_m_f_sum_all$population) <- contrasts_religion
+```
 
 ## Study 3
 
@@ -134,8 +186,14 @@ d_p_m <- read_csv("./data/d_p_m.csv")%>%
 
 d_p_m_sum <- read_csv("./data/d_p_m_sum.csv") %>% 
   mutate(
-    religion_denom = factor(religion_denom)
+    religion_denom = factor(religion_denom),
+    spev_score_scaled = spev_score/4,
+    pray_freq_PEW = factor(pray_freq_PEW, levels = c("Never", "Seldom", "A few times a month", "Once a week", "A few times a week", "Once a day", "Several times a day"))
     )
+
+d_p_demo <- read_csv("./data/d_demo_prolific.csv") %>% 
+  mutate(demo_religimp_num = as.numeric(factor(`demo_religimp-PEW`,
+                                               levels = c("Not at all important", "Not too important", "Somewhat important", "Very important"))))
 
 spev_key <- read_csv("./data/spev_key.csv")
 
@@ -157,7 +215,7 @@ contrasts(d_p_m_sum$religion_denom) <- contr_effect_fun(d_p_m_sum, "religion_den
 
 **An informal summary (KW)**: above and beyond differences across countries, rural vs. urban locations, and religious groups, the more frequently a person reported praying, the more spiritual events they reported having experienced. This is robust to many analytic decisions, including modeling responses at the item level vs. modeling average scores on the Spiritual Events scale and considering sample characteristics as fixed effects, nested random effects, or crossed random effects. 
 
-```{r}
+```{r, fig.width=4, fig.asp = 1.5}
 # Prepare the subset for charismatic participants ahead
 charismatic_subset <- d_i_m_sum_all %>% 
   filter(religion == "charismatic")
@@ -170,10 +228,12 @@ ggplot() +
   geom_smooth(data = d_i_m_sum_all, aes(x = prayfreqmin, y = spev_score, group = religion, color = religion), 
               method = "lm", se = TRUE, alpha = 0.1) +
   scale_x_continuous(breaks = 1:4, labels = levels(d_i_m_sum_all$prayfreqmin_cat)) +
+  scale_y_continuous(breaks = 0:1, labels = c("No", "Yes")) +
   theme(legend.position = "top", 
-        axis.title.x = element_text(size=13), 
-        axis.title.y = element_text(size=18),
-        title = element_text(size=15)) +
+        axis.title.x = element_text(size=7), 
+        axis.text.x = element_text(angle = 20, hjust = 1),
+        axis.title.y = element_text(size=12),
+        title = element_text(size=8)) +
   scale_color_brewer(palette = "Set2") +
   labs(title = "Study 1, all participants vs. charismatic participants",
        x = "'How many minutes each day do you [pray] on average throughout the week?'",
@@ -194,6 +254,7 @@ ggplot(aes(x = prayfreqmin, y = spev_score)) +
               method = "lm", se = TRUE, alpha = 0.1) +
   facet_wrap(~ country, ncol = 5) +  
   scale_x_continuous(breaks = 1:4, labels = levels(d_i_m_sum_all$prayfreqmin_cat)) +
+   scale_y_continuous(breaks = 0:1, labels = c("No", "Yes")) +
   scale_color_brewer(palette = "Set2") +
   labs(title = "Study 1, by religion and country",
        x = "'How many minutes each day do you [pray] on average throughout the week?'",
@@ -219,7 +280,7 @@ m.int.a.1 <- lmer(
 ```{r}
 parameters(m.int.a.1)
 ```
-
+### all participants--controlling for religiosity
 
 ### Charismatic Christian participants only 
 
@@ -291,23 +352,28 @@ ggplot(aes(x = prayfreqmin, y = spev_score)) +
 
 **An informal summary (KW)**: above and beyond differences across countries and samples (charismatic vs. general population), the more frequently a person reported praying, the more spiritual events they reported having experienced. This is robust to many analytic decisions, including modeling responses at the item level vs. modeling average scores on the Spiritual Events scale and considering sample characteristics as fixed or random effects. 
 
-```{r}
+```{r, fig.width=4, fig.asp = 1.5}
+d_e_m_f_sum_all <- d_e_m_f_sum_all %>%
+  filter(!is.na(population))
+
 # Prepare the subset for charismatic participants ahead
-charismatic_subset <- d_e_m_sum_all %>% 
+charismatic_subset <- d_e_m_f_sum_all %>% 
   filter(population == "charismatic")
 
 ggplot() +
   # Jitter for all participants colored by country
-  geom_jitter(data = d_e_m_sum_all, aes(x = prayminday_imp0, y = spev_score, color = population), 
+  geom_jitter(data = d_e_m_f_sum_all, aes(x = prayminday_imp0, y = spev_score_f, color = population), 
               height = 0, width = 0.2, alpha = 0.8, size = 1) +
   # Regression line with confidence interval for all participants
-  geom_smooth(data = d_e_m_sum_all, aes(x = prayminday_imp0, y = spev_score, group = population, color = population), 
+  geom_smooth(data = d_e_m_f_sum_all, aes(x = prayminday_imp0, y = spev_score_f, group = population, color = population), 
               method = "lm", se = TRUE, linetype = "solid", alpha = 0.2) +
-  scale_x_continuous(breaks = 0:4, labels = levels(d_e_m_sum_all$prayminday_imp0_cat)) +
+  scale_x_continuous(breaks = 0:4, labels = levels(d_e_m_f_sum_all$prayminday_imp0_cat)) +
+  scale_y_continuous(breaks = 0:5, labels = c("Never", "Once or\n twice", "At least\n 1/year", "At least\n 1/month", "At least\n 1/week", "Even more")) +
   theme(legend.position = "top",
-        axis.title.x = element_text(size=12), 
-        axis.title.y = element_text(size=18),
-        title = element_text(size=15)) +
+        axis.text.x = element_text(angle = 20, hjust = 1),
+        axis.title.x = element_text(size=6), 
+        axis.title.y = element_text(size=12),
+        title = element_text(size=8)) +
   scale_color_brewer(palette = "Set2") + # This will automatically apply to the 'color' aesthetic, now mapping to 'country'
   labs(title = "Study 2, all participants vs. charismatic participants",
        x = "'Do you [pray] regularly? On an average day, how many minutes do you [pray]?'\nNOTE: Participants who explicitly reported never praying were assigned 'not at all' (0)",
@@ -317,15 +383,16 @@ ggplot() +
 ```
 
 ```{r}
-d_e_m_sum_all %>%
+d_e_m_f_sum_all %>%
   filter(!is.na(prayminday_imp0)) %>%
-ggplot(aes(x = prayminday_imp0, y = spev_score)) +
+ggplot(aes(x = prayminday_imp0, y = spev_score_f)) +
   geom_jitter(aes(color = population), 
               height = 0, width = 0.2, alpha = 0.8, size = 1) +
   geom_smooth(aes(group = population, color = population), 
               method = "lm", se = TRUE, alpha = 0.1) +
   facet_wrap(~ country, ncol = 5) +  
-  scale_x_continuous(breaks = 0:4, labels = levels(d_e_m_sum_all$prayminday_imp0_cat)) +
+  scale_x_continuous(breaks = 0:4, labels = levels(d_e_m_f_sum_all$prayminday_imp0_cat)) +
+   scale_y_continuous(breaks = 0:5, labels = c("Never", "Once or\n twice", "At least\n 1/year", "At least\n 1/month", "At least\n 1/week", "Even more")) +
   scale_color_brewer(palette = "Set2") +
   labs(title = "Study 2, by population and country",
        x = "'Do you [pray] regularly? On an average day, how many minutes do you [pray]?'\nNOTE: Participants who explicitly reported never praying were assigned 'not at all' (0)",
@@ -333,7 +400,7 @@ ggplot(aes(x = prayminday_imp0, y = spev_score)) +
        color = "Group") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), 
         legend.position = "top", 
-        axis.title.x = element_text(size = 13), 
+        axis.title.x = element_text(size = 12), 
         axis.title.y = element_text(size = 18), 
         title = element_text(size = 15))
 ```
@@ -342,9 +409,9 @@ ggplot(aes(x = prayminday_imp0, y = spev_score)) +
 
 ```{r}
 m.epi.b.1p <- lmer(
-  spev_score ~ 1 + scale(prayminday_imp0, scale = F) 
+  spev_score_f_scaled ~ 1 + scale(prayminday_imp0, scale = F) 
   + (1|country/population),
-  data = d_e_m_sum_all)
+  data = d_e_m_f_sum_all)
 ```
 
 ```{r}
@@ -358,12 +425,12 @@ parameters(m.epi.b.1p)
 ```{r}
 #prayminday
 m.epi.b.2p <- lmer(
-  spev_score ~ 1 + scale(prayminday_imp0, scale = F) 
+  spev_score_f_scaled ~ 1 + scale(prayminday_imp0, scale = F) 
   + (1|country),
-  data = d_e_m_sum_all %>% filter(population == "charismatic"),
+  data = d_e_m_f_sum_all %>% filter(population == "charismatic"),
   contrasts = list(
     country = contr_effect_fun(
-      d_e_m_sum_all %>% filter(country != "China"), 
+      d_e_m_f_sum_all %>% filter(country != "China"), 
       "country", 
       "US")))
 ```
@@ -372,18 +439,49 @@ m.epi.b.2p <- lmer(
 parameters(m.epi.b.2p)
 ```
 
+### All participants controlling for religiosity
+
+```{r}
+m.epi.rel.all.1 <- lmer(
+  spev_score_f_scaled ~ 1 + scale(prayminday_imp0, scale = F) + scale(howr_num, scale = F)
+  + (1|country/population),
+  data = d_e_m_f_sum_all)
+```
+
+```{r}
+parameters(m.epi.rel.all.1)
+```
+
+### Charismatic Christians controlling for religiosity
+
+```{r}
+m.epi.rel.char.1 <- lmer(
+  spev_score_f_scaled ~ 1 + scale(prayminday_imp0, scale = F) + scale(howr_num, scale = F)
+  + (1|country),
+  data = d_e_m_f_sum_all %>% filter(population == "charismatic"),
+  contrasts = list(
+    country = contr_effect_fun(
+      d_e_m_f_sum_all %>% filter(country != "China"), 
+      "country", 
+      "US")))
+```
+
+```{r}
+parameters(m.epi.rel.char.1)
+```
+
 ### General population & charismatic participants, grouped by country
 
 ```{r}
-d_e_m_sum_all %>%
+d_e_m_f_sum_all %>%
   filter(!is.na(prayminday_imp0)) %>%
-ggplot(aes(x = prayminday_imp0, y = spev_score)) +
+ggplot(aes(x = prayminday_imp0, y = spev_score_f)) +
   geom_jitter(aes(color = population), 
               height = 0, width = 0.2, alpha = 0.8, size = 1) +
   geom_smooth(aes(group = population, color = population), 
               method = "lm", se = TRUE, alpha = 0.1) +
   facet_wrap(~ country, ncol = 5) +  
-  scale_x_continuous(breaks = 0:4, labels = levels(d_e_m_sum_all$prayminday_imp0_cat)) +
+  scale_x_continuous(breaks = 0:4, labels = levels(d_e_m_f_sum_all$prayminday_imp0_cat)) +
   scale_color_brewer(palette = "Set2") +
   labs(title = "Study 2, by population and country",
        x = "'Do you [pray] regularly? On an average day, how many minutes do you [pray]?'\nNOTE: Participants who explicitly reported never praying were assigned 'not at all' (0)",
@@ -399,16 +497,16 @@ ggplot(aes(x = prayminday_imp0, y = spev_score)) +
 ### General population participants, grouped by country 
 
 ```{r}
-d_e_m_sum_all %>%
+d_e_m_f_sum_all %>%
   filter(!is.na(prayminday_imp0)) %>%
   filter(population == "general population") %>%
-ggplot(aes(x = prayminday_imp0, y = spev_score)) +
+ggplot(aes(x = prayminday_imp0, y = spev_score_f)) +
   geom_jitter(aes(color = country), 
               height = 0, width = 0.2, alpha = 0.8, size = 1) +
   geom_smooth(aes(group = country, color = country), 
               method = "lm", se = TRUE, alpha = 0.1) +
   facet_wrap(~ country, ncol = 5) +  
-  scale_x_continuous(breaks = 0:4, labels = levels(d_e_m_sum_all$prayminday_imp0_cat)) +
+  scale_x_continuous(breaks = 0:4, labels = levels(d_e_m_f_sum_all$prayminday_imp0_cat)) +
   scale_color_brewer(palette = "Set2") +
   labs(title = "Study 2, General Population only",
        x = "'Do you [pray] regularly? On an average day, how many minutes do you [pray]?'\nNOTE: Participants who explicitly reported never praying were assigned 'not at all' (0)",
@@ -425,7 +523,7 @@ ggplot(aes(x = prayminday_imp0, y = spev_score)) +
 
 **An informal summary (KW)**: above and beyond differences across denominations, the more frequently a person reported praying, the more spiritual events they reported having experienced. This is robust to many analytic decisions, including [NOT YET CONFIRMED: modeling responses at the item level vs. modeling average scores on the Spiritual Events scale and] considering sample characteristics as fixed vs. random effects. 
 
-```{r}
+```{r,fig.width=4, fig.asp = 1.5}
 # Add a new column 'group' to categorize each observation
 d_p_m_sum <- d_p_m_sum %>%
   mutate(group = case_when(
@@ -441,12 +539,13 @@ ggplot(d_p_m_sum, aes(x = pray_freq_PEW_num, y = spev_score, color = group)) +
   geom_smooth(data = d_p_m_sum %>% filter(group == "All Christian"), aes(group = group),  method = "lm", alpha = 0.1) +
   geom_smooth(data = d_p_m_sum %>% filter(group == "Evangelical Christian"), aes(group = group),  method = "lm", alpha = 0.1) +
   scale_x_continuous(breaks = 1:7, labels = levels(d_p_m_sum$pray_freq_PEW)) +
-  scale_y_continuous(breaks = 0:4, limits = c(0, 4)) +
+  scale_y_continuous(breaks = 0:4, labels = c("Never", "Once", "Several\n times", "Fairly\n often", "Very\n often")) +
   scale_color_brewer(palette = "Set2") +
   theme(legend.position = "top",
-        axis.title.x = element_text(size=13), 
-        axis.title.y = element_text(size=18),
-        title = element_text(size=14)) +
+        legend.text = element_text(size = 6.5),
+        axis.title.x = element_text(size=8), 
+        axis.title.y = element_text(size=12),
+        title = element_text(size=7)) +
   #scale_fill_manual(values = group_colors) + # Add this line to manually set fill colors
   theme(axis.text.x = element_text(angle = 20, hjust = 1, vjust = 1)) +
   labs(title = "Study 3, Comparing all, Christian, and evangelical participants",
@@ -460,7 +559,7 @@ ggplot(d_p_m_sum, aes(x = pray_freq_PEW_num, y = spev_score, color = group)) +
 
 ```{r}
 m.pro.a.1 <- lmer(
-  spev_score ~ 1 + scale(pray_freq_PEW_num, scale = F) 
+  spev_score_scaled ~ 1 + scale(pray_freq_PEW_num, scale = F) 
   + (1|religion_denom), # fully nested
   # + (1|country/site) + (1|religion), # site nested within country, religion crossed
   data = d_p_m_sum)
@@ -476,7 +575,7 @@ parameters(m.pro.a.1)
 
 ```{r}
 m.pro.a.2 <- lmer(
-  spev_score ~ 1 + scale(pray_freq_PEW_num, scale = F) 
+  spev_score_scaled ~ 1 + scale(pray_freq_PEW_num, scale = F) 
   + (1|religion_cat), # incl denomination
   data = d_p_m_sum %>% filter(religion_denom == "Christian"))
 ```
@@ -497,6 +596,45 @@ m.pro.a.3 <- lm(
 
 ```{r}
 parameters(m.pro.a.3)
+```
+### all participants controlling for religiosity
+
+```{r}
+m.pro.rel.all.1 <- lmer(
+  spev_score_scaled ~ 1 + scale(pray_freq_PEW_num, scale = F) + scale(demo_religimp_num, scale = F)
+  + (1|religion_denom), # fully nested
+  data = d_p_m_sum %>% left_join(d_p_demo %>% select(ResponseId, demo_religimp_num)))
+```
+
+```{r}
+parameters(m.pro.rel.all.1)
+```
+
+### christian participants controlling for religiosity
+
+```{r}
+m.pro.rel.xtian.1 <- lmer(
+  spev_score_scaled ~ 1 + scale(pray_freq_PEW_num, scale = F) + scale(demo_religimp_num, scale = F)
+  + (1|religion_cat), # incl denomination
+  data = d_p_m_sum %>% filter(religion_denom == "Christian") %>% 
+    left_join(d_p_demo %>% select(ResponseId, demo_religimp_num)))
+```
+
+```{r}
+parameters(m.pro.rel.xtian.1)
+```
+
+### evangelical participants controlling for religiosity
+
+```{r}
+m.pro.rel.ev.1 <- lm(
+  spev_score ~ 1 + scale(pray_freq_PEW_num, scale = F) + scale(demo_religimp_num, scale = F),
+  data = d_p_m_sum %>% filter(grepl("Evang", religion_cat)) %>%
+    left_join(d_p_demo %>% select(ResponseId, demo_religimp_num)))
+```
+
+```{r}
+parameters(m.pro.rel.ev.1)
 ```
 
 ### Non-religious participants only 
@@ -530,7 +668,7 @@ ggplot(aes(x = pray_freq_PEW_num, y = spev_score)) +
 
 ## Study 1 
 
-```{r}
+```{r, fig.width=4, fig.asp = 1.5}
 category_colors <- c("relabeled" = "#66c2a5", 
                   "presence" = "#fc8d62", 
                   "outer_sensory" = "#8da0cb")
@@ -550,16 +688,18 @@ d_i_m %>%
       dplyr::select(subject_id, country)
   ) %>% distinct() %>%
   ggplot(aes(x = prayfreqmin, y = mean, color = category)) +
-  geom_jitter(width = 0.2, height = 0.1, size = 0.7, alpha = 0.4) +
+  geom_jitter(width = 0.2, height = 0.08, size = 0.7, alpha = 0.4) +
   geom_smooth(method = "lm", alpha=0.2) +
   scale_x_continuous(breaks = 1:4, labels = levels(d_i_m_sum$prayfreqmin_cat)) +
-  # scale_y_continuous(breaks = 0:4, limits = c(0, 4)) +
+  scale_y_continuous(breaks = 0:1, labels = c("No", "Yes")) +
   scale_color_manual(values=category_colors) +
   #scale_color_brewer(palette = "Dark2", na.value = "gray") +
   theme(legend.position = "top",
-        title = element_text(size=18),
-        axis.title.x = element_text(size=12), 
-        axis.title.y = element_text(size=18)) +
+        legend.text = element_text(size=5.5),
+        title = element_text(size=8),
+        axis.title.x = element_text(size=7), 
+        axis.title.y = element_text(size=12)) +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1, vjust = 1)) +
   labs(title = "Study 1, all participants",
        x = "'How many minutes each day do you [pray] on average throughout the week?'",
        y = "Spiritual Events score (mean response)",
@@ -644,6 +784,7 @@ d_i_m %>%
   kbl(digits = 3) %>%
   kable_styling() %>%
   collapse_rows(1:2, valign = "top")
+
 ```
 
 ### Linear mixed effects models
@@ -664,6 +805,7 @@ parameters(m.int.3a.1.1)
 ### Charismatic Christian participants
 
 ```{r}
+contrasts(d_i_m_sum$category) <- contr_effect_fun(d_i_m_sum, "category", "weird") # drop weird
 
 m.int.3a.2.2 <- lmer(
   spev_score ~ 1 + category * scale(prayfreqmin, scale = F)
@@ -680,36 +822,38 @@ parameters(m.int.3a.2.2)
 
 ## Study 2 
 
-```{r}
+```{r, fig.width=5, fig.asp = 1.5}
 category_colors <- c("relabeled" = "#66c2a5", 
                   "presence" = "#fc8d62", 
                   "outer_sensory" = "#8da0cb")
 
-d_e_m %>%
+d_e_m_f %>%
   filter(!is.na(category), category != "weird") %>%
   group_by(subject_id, prayminday_imp0, prayminday_imp0_cat, category) %>%
   multi_boot_standard(col = "response", na.rm = T) %>%
   ungroup() %>%
   left_join(
-    d_e_m %>%
+    d_e_m_f %>%
       group_by(subject_id, category, prayminday_imp0_cat) %>%
       summarise(avg_subj_response = mean(response, na.rm = TRUE))
   ) %>%
   left_join(
-    d_e_m %>% 
+    d_e_m_f %>% 
       dplyr::select(subject_id, country)
   ) %>% distinct() %>%
   ggplot(aes(x = prayminday_imp0, y = mean, color = category)) +
   geom_jitter(width = 0.2, height = 0.1, size = 0.6, alpha = 0.3) +
   geom_smooth(method = "lm", alpha = 0.2) +
-  scale_x_continuous(breaks = 0:4, labels = levels(d_e_m_sum$prayminday_imp0_cat)) +
-  # scale_y_continuous(breaks = 0:4, limits = c(0, 4)) +
+  scale_x_continuous(breaks = 0:4, labels = levels(d_e_m_f_sum$prayminday_imp0_cat)) +
+  scale_y_continuous(breaks = 0:5, labels = c("Never", "Once or\n twice", "At least\n 1/year", "At least\n 1/month", "At least\n 1/week", "Even more")) +
   scale_color_manual(values = category_colors) +
   #scale_color_brewer(palette = "Dark2", na.value = "gray") +
   theme(legend.position = "top",
-        title = element_text(size=18),
-        axis.title.x = element_text(size=12), 
-        axis.title.y = element_text(size=18)) +
+        legend.text = element_text(size=6),
+        title = element_text(size=8),
+        axis.title.x = element_text(size=7), 
+        axis.title.y = element_text(size=12)) +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1, vjust = 1)) +
   labs(title = "Study 2, all participants",
        x = "'Do you [pray] regularly? On an average day, how many minutes do you [pray]?'\nNOTE: Participants who explictly reported never praying were assigned 'not at all' (0)",
        y = "Spiritual Events score (mean response)",
@@ -725,7 +869,7 @@ d_e_m %>%
 #epi
 
 #relabeled
-relabeled_epi <- d_e_m %>% 
+relabeled_epi <- d_e_m_f %>% 
   filter(category == "relabeled") %>%
   dplyr::select(subject_id, question, response) %>% 
   distinct() %>%
@@ -733,7 +877,7 @@ relabeled_epi <- d_e_m %>%
   column_to_rownames(var = "subject_id")
 
 #outer_sensory
-outer_sensory_epi <- d_e_m %>% 
+outer_sensory_epi <- d_e_m_f %>% 
   filter(category == "outer_sensory") %>%
   dplyr::select(subject_id, question, response) %>% 
   distinct() %>%
@@ -741,7 +885,7 @@ outer_sensory_epi <- d_e_m %>%
   column_to_rownames(var = "subject_id")
 
 #presence
-presence_epi <- d_e_m %>% 
+presence_epi <- d_e_m_f %>% 
   filter(category == "presence") %>%
   dplyr::select(subject_id, question, response) %>% 
   distinct() %>%
@@ -749,7 +893,7 @@ presence_epi <- d_e_m %>%
   column_to_rownames(var = "subject_id")
 
 #weird
-weird_epi <- d_e_m %>% 
+weird_epi <- d_e_m_f %>% 
   filter(category == "weird") %>%
   dplyr::select(subject_id, question, response) %>% 
   distinct() %>%
@@ -769,7 +913,9 @@ alpha(weird_epi)
 ### Correlations
 
 ```{r}
-d_e_m %>% 
+#using frequency data
+
+d_e_m_f %>% 
   select(subject_id, question, response, prayminday_imp0) %>%
   spread(question, response) %>%
   column_to_rownames("subject_id") %>%
@@ -779,7 +925,7 @@ d_e_m %>%
   filter(question != "prayminday_imp0") %>%
   select(question, prayminday_imp0) %>%
   rename(cor_prayer = prayminday_imp0) %>%
-  left_join(d_e_m %>% distinct(question, category)) %>%
+  left_join(d_e_m_f %>% distinct(question, category)) %>%
   mutate(category = if_else(is.na(category), "(other)", category)) %>%
   group_by(category) %>%
   mutate(MEAN_cor = mean(cor_prayer, na.rm = T)) %>%
@@ -793,6 +939,7 @@ d_e_m %>%
   kbl(digits = 3) %>%
   kable_styling() %>%
   collapse_rows(1:2, valign = "top")
+
 ```
 
 ### Linear mixed effects models
@@ -800,11 +947,12 @@ d_e_m %>%
 #### All participants
 
 ```{r}
-#prayminday_imp0
+contrasts(d_e_m_f_sum$category) <- contr_effect_fun(d_e_m_f_sum, "category", "weird") # drop weird
+
 m.epi.3b.1p.1 <- lmer(
-  spev_score ~ 1 + category * scale(prayminday_imp0, scale = F)
+  spev_score_f_scaled ~ 1 + category * scale(prayminday_imp0, scale = F)
   + (1|country/population), # fully nested
-  data = d_e_m_sum)
+  data = d_e_m_f_sum)
 ```
 
 ```{r}
@@ -814,19 +962,18 @@ parameters(m.epi.3b.1p.1)
 #### Charismatic Christian participants
 
 ```{r}
-#prayminday_imp0 -- not enough variability in pray at all, basically all charismatics pray
-contrasts(d_e_m$category) <- contr_effect_fun(d_e_m, "category", "weird") # drop weird
+contrasts(d_e_m_f_sum$category) <- contr_effect_fun(d_e_m_f_sum, "category", "weird") # drop weird
 
 m.epi.3b.2p.1 <- lmer(
-  spev_score ~ 1 + category * scale(prayminday_imp0, scale = F)
+  spev_score_f_scaled ~ 1 + category * scale(prayminday_imp0, scale = F)
   + (1|country/population), # fully nested
-  data = d_e_m_sum %>%
+  data = d_e_m_f_sum %>%
     filter(population == "charismatic") %>%
     mutate(country = factor(
       country,
       levels = c("US", "Ghana", "Thailand", "Vanuatu"))),
   contrasts = list(country = contr_effect_fun(
-    d_e_m_sum %>%
+    d_e_m_f_sum %>%
       filter(country != "China"),
     var_name = "country",
     level_drop = "US")))
@@ -836,9 +983,50 @@ m.epi.3b.2p.1 <- lmer(
 parameters(m.epi.3b.2p.1)
 ```
 
-## Study 3
+### Mixed effects models controlling for religiosity and with random effects by question
+
+#### All participants
 
 ```{r}
+contrasts(d_e_m_f_sum$category) <- contr_effect_fun(d_e_m_f_sum, "category", "weird") # drop weird
+
+m.epi.rel.all <- lmer(
+  spev_score_f_scaled ~ 1 + category * scale(prayminday_imp0, scale = F) + scale(howr_num, scale = F)
+  + (1|country/population), # fully nested
+  data = d_e_m_f_sum)
+```
+
+```{r}
+parameters(m.epi.rel.all)
+```
+
+#### Charismatic Christian participants
+
+```{r}
+contrasts(d_e_m_f_sum$category) <- contr_effect_fun(d_e_m_f_sum, "category", "weird") # drop weird
+
+m.epi.rel.char <- lmer(
+  spev_score_f_scaled ~ 1 + category * scale(prayminday_imp0, scale = F) + scale(howr_num, scale = F)
+  + (1|country/population), # fully nested
+  data = d_e_m_f_sum %>%
+    filter(population == "charismatic") %>%
+    mutate(country = factor(
+      country,
+      levels = c("US", "Ghana", "Thailand", "Vanuatu"))),
+  contrasts = list(country = contr_effect_fun(
+    d_e_m_f_sum %>%
+      filter(country != "China"),
+    var_name = "country",
+    level_drop = "US")))
+```
+
+```{r}
+parameters(m.epi.rel.char)
+```
+
+## Study 3
+
+```{r, fig.width=4, fig.asp = 1.5}
 category_colors <- c("relabeled" = "#66c2a5", 
                   "presence" = "#fc8d62", 
                   "outer_sensory" = "#8da0cb")
@@ -854,13 +1042,15 @@ d_p_m %>%
   geom_jitter(width = 0.2, height = 0.1, size = 0.1, alpha = 0.4) +
   geom_smooth(method = "lm", alpha = 0.2) +
   scale_x_continuous(breaks = 1:7, labels = levels(d_p_m_sum$pray_freq_PEW)) +
-  # scale_y_continuous(breaks = 0:4, limits = c(0, 4)) +
+  scale_y_continuous(breaks = 0:4, labels = c("Never", "Once", "Several\n times", "Fairly\n often", "Very\n often")) +
   scale_color_manual(values = category_colors) +
   #scale_color_brewer(palette = "Dark2", na.value = "gray") +
   theme(legend.position = "top",
-        title = element_text(size=18),
-        axis.title.x = element_text(size=12), 
-        axis.title.y = element_text(size=18)) +
+        legend.text = element_text(size=4.5),
+        title = element_text(size=8),
+        axis.title.x = element_text(size=7), 
+        axis.title.y = element_text(size=12)) +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1, vjust = 1)) +
   labs(title = "Study 3, all participants",
        x = "'Outside of attending religious services, how often do you pray?'",
        y = "Spiritual Events score (mean response)",
@@ -941,6 +1131,31 @@ d_p_m %>%
   kbl(digits = 3) %>%
   kable_styling() %>%
   collapse_rows(1:2, valign = "top")
+
+
+tabledata <- d_p_m %>% 
+  select(ResponseId, question_lab, response, pray_freq_PEW_num) %>%
+  spread(question_lab, response) %>%
+  column_to_rownames("ResponseId") %>%
+  cor(use = "pairwise.complete") %>%
+  data.frame() %>%
+  rownames_to_column("question_lab") %>%
+  filter(question_lab != "pray_freq_PEW_num") %>%
+  select(question_lab, pray_freq_PEW_num) %>%
+  rename(cor_prayer = pray_freq_PEW_num) %>%
+  left_join(d_p_m %>% distinct(question_lab, category)) %>%
+  mutate(category = if_else(is.na(category), "(other)", category)) %>%
+  group_by(category) %>%
+  mutate(MEAN_cor = mean(cor_prayer, na.rm = T)) %>%
+  ungroup() %>%
+  select(category, MEAN_cor, question_lab, cor_prayer) %>%
+  arrange(desc(MEAN_cor), category, desc(cor_prayer)) %>%
+  rename(Category = category,
+         `Mean R` = MEAN_cor,
+         Question = question_lab,
+         `Item-wise R` = cor_prayer) 
+
+write.csv(tabledata, "s3table.csv", row.names = F)
 ```
 
 ### Linear mixed effects models
@@ -956,7 +1171,7 @@ m.pro.3a.1.1 <- lmer(
   # control = lmerControl(optimizer = "bobyqa"),
   data = d_p_m %>% 
     group_by(ResponseId, religion_denom, pray_freq_PEW_num, category) %>%
-    summarise(score = mean(response, na.rm = T)),
+    summarise(score = mean(response, na.rm = T)/4),
   contrasts = list(category = contr_effect_fun(d_p_m, "category", "presence")))
 ```
 
@@ -975,7 +1190,7 @@ m.pro.3a.1.2 <- lmer(
   data = d_p_m %>% 
     filter(religion_denom == "Christian") %>%
     group_by(ResponseId, religion_denom, pray_freq_PEW_num, category) %>%
-    summarise(score = mean(response, na.rm = T)),
+    summarise(score = mean(response, na.rm = T)/4),
   contrasts = list(category = contr_effect_fun(d_p_m, "category", "presence")))
 ```
 
@@ -994,12 +1209,73 @@ m.pro.3a.1.3 <- lmer(
   data = d_p_m %>% 
     filter(grepl("Evang", religion_cat)) %>%
     group_by(ResponseId, religion_denom, pray_freq_PEW_num, category) %>%
-    summarise(score = mean(response, na.rm = T)),
+    summarise(score = mean(response, na.rm = T)/4),
   contrasts = list(category = contr_effect_fun(d_p_m, "category", "presence")))
 ```
 
 ```{r}
 parameters(m.pro.3a.1.3)
+```
+
+### Mixed effects models controlling for religiosity 
+
+#### All participants 
+
+```{r}
+# category-level "scores"
+m.pro.rel.all <- lmer(
+  score ~ 1 + category * scale(pray_freq_PEW_num, scale = F) + scale(demo_religimp_num, scale = F)
+  + (1|ResponseId), # no religion
+  # control = lmerControl(optimizer = "bobyqa"),
+  data = d_p_m %>% 
+    filter(religion_denom == "Christian") %>%
+    group_by(ResponseId, religion_denom, pray_freq_PEW_num, category) %>%
+    summarise(score = mean(response, na.rm = T)/4) %>% 
+    left_join(d_p_demo %>% select(ResponseId, demo_religimp_num)),
+  contrasts = list(category = contr_effect_fun(d_p_m, "category", "presence")))
+```
+
+```{r}
+parameters(m.pro.rel.all)
+```
+
+#### All Christians
+
+```{r}
+# category-level "scores"
+m.pro.rel.xtian <- lmer(
+  score ~ 1 + category * scale(pray_freq_PEW_num, scale = F) + scale(demo_religimp_num, scale = F)
+  + (1|ResponseId), # no religion
+  # control = lmerControl(optimizer = "bobyqa"),
+  data = d_p_m %>% 
+    filter(religion_denom == "Christian") %>%
+    group_by(ResponseId, religion_denom, pray_freq_PEW_num, category) %>%
+    summarise(score = mean(response, na.rm = T)/4) %>% 
+    left_join(d_p_demo %>% select(ResponseId, demo_religimp_num)),
+  contrasts = list(category = contr_effect_fun(d_p_m, "category", "presence")))
+```
+
+```{r}
+parameters(m.pro.rel.xtian)
+```
+
+#### Only evangelicals
+
+```{r}
+# category-level "scores"
+m.pro.rel.ev <- lmer(
+  score ~ 1 + category * scale(pray_freq_PEW_num, scale = F) + scale(demo_religimp_num, scale = F)
+  + (1|ResponseId), # no religion
+  # control = lmerControl(optimizer = "bobyqa"),
+  data = d_p_m %>% 
+    filter(grepl("Evang", religion_cat)) %>%
+    group_by(ResponseId, religion_denom, pray_freq_PEW_num, category) %>%
+    summarise(score = mean(response, na.rm = T)/4) %>% 
+    left_join(d_p_demo %>% select(ResponseId, demo_religimp_num)),
+  contrasts = list(category = contr_effect_fun(d_p_m, "category", "presence")))
+```
+```{r}
+parameters(m.pro.rel.ev)
 ```
 
 # Additional Visualizations
